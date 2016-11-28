@@ -4,12 +4,14 @@ import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
+import pl.pmackowski.succotash.eviction.EvictionConstants;
 import pl.pmackowski.succotash.eviction.impl.EvictionEntriesScheduledStrategy;
-import pl.pmackowski.succotash.eviction.impl.EvictionEntryScheduledStrategy;
 import pl.pmackowski.succotash.eviction.impl.EvictionEntriesThreadSleepStrategy;
+import pl.pmackowski.succotash.eviction.impl.EvictionEntryScheduledStrategy;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -19,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(Theories.class)
 public class SuccotashCacheTest {
 
+    private static final String KEY = "key";
     private static final String KEY_1 = "key1";
     private static final String KEY_2 = "key2";
     private static final String VALUE_1 = "value1";
@@ -32,7 +35,7 @@ public class SuccotashCacheTest {
     public static List<Cache<String, String>> caches = Arrays.asList(
             new SuccotashEvictEntriesCache<>(new EvictionEntriesScheduledStrategy()),
             new SuccotashEvictEntriesCache<>(new EvictionEntriesThreadSleepStrategy()),
-            new SuccotashEvictEntryCache<>(new EvictionEntryScheduledStrategy<>())
+            new SuccotashEvictEntryCache<>(new EvictionEntryScheduledStrategy<>()) // the winner
     );
 
     @Theory
@@ -113,4 +116,24 @@ public class SuccotashCacheTest {
         assertThat(actual).isEqualTo(VALUE_2);
     }
 
+    @Theory // TODO move to other place, its not a unit test
+    public void shouldDealWithBigObjectsTogetherLargerThanMaxHeapSize(Cache<String, String> cache) throws InterruptedException {
+        // EvictionConstants.EVICTION_INTERVAL is used internally by SuccotashEvictEntriesCache cache,
+        // which evicts periodically all expired entries.
+        // If we set timeToLive to value smaller than EvictionConstants.EVICTION_INTERVAL then for SuccotashEvictEntriesCache
+        // this test could not pass. On the other hand, regardless of timeToLive SuccotashEvictEntryCache should pass this test.
+        long timeToLive = EvictionConstants.EVICTION_INTERVAL;
+        char[] twoHundredMegabyteObject = new char[100 * 1024 * 1024]; // char is 2 bytes large
+        int numberOfObjects = 50;
+
+        // together we put into cache ~10 GB of data
+        for (int i=0; i < numberOfObjects; i++) {
+            cache.put(KEY + i, new String(twoHundredMegabyteObject), timeToLive);
+            Thread.sleep(timeToLive);
+        }
+
+        IntStream.rangeClosed(1, numberOfObjects).forEach( value -> {
+            assertThat(cache.get(KEY + value)).isNull();
+        });
+    }
 }

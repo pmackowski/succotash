@@ -1,10 +1,11 @@
 package pl.pmackowski.succotash.eviction.impl;
 
-import pl.pmackowski.succotash.CacheValue;
 import pl.pmackowski.succotash.eviction.CacheEvictEntries;
 import pl.pmackowski.succotash.eviction.EvictionEntriesStrategy;
 
 import java.lang.ref.WeakReference;
+
+import static pl.pmackowski.succotash.eviction.EvictionConstants.EVICTION_INTERVAL;
 
 /**
  * Created by pmackowski on 2016-11-28.
@@ -19,13 +20,6 @@ public class EvictionEntriesThreadSleepStrategy implements EvictionEntriesStrate
     }
 
     private static class CacheEviction implements Runnable {
-
-        /**
-         * Checking every one millisecond could be an overkill.
-         * Thanks to {@link CacheValue#getValue() getValue} implementation,
-         * there is no need to evict cache value immediately after TTL expires.
-         */
-        private static final long EVICTION_INTERVAL = 1000;
 
         private final WeakReference<CacheEvictEntries> cacheWeakReference;
 
