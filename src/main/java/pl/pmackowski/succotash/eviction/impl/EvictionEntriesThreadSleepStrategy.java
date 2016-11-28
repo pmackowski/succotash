@@ -13,12 +13,12 @@ public class EvictionEntriesThreadSleepStrategy implements EvictionEntriesStrate
 
     @Override
     public void start(CacheEvictEntries cacheEvictEntries) {
-        final Thread thread = new Thread(new CacheEvictor(cacheEvictEntries));
+        final Thread thread = new Thread(new CacheEviction(cacheEvictEntries));
         thread.setDaemon(true);
         thread.start();
     }
 
-    private static class CacheEvictor implements Runnable {
+    private static class CacheEviction implements Runnable {
 
         /**
          * Checking every one millisecond could be an overkill.
@@ -29,7 +29,7 @@ public class EvictionEntriesThreadSleepStrategy implements EvictionEntriesStrate
 
         private final WeakReference<CacheEvictEntries> cacheWeakReference;
 
-        private CacheEvictor(CacheEvictEntries cacheEvictEntries) {
+        private CacheEviction(CacheEvictEntries cacheEvictEntries) {
             this.cacheWeakReference = new WeakReference<>(cacheEvictEntries);
         }
 

@@ -28,9 +28,14 @@ public class EvictionEntriesScheduledStrategy implements EvictionEntriesStrategy
         WeakReference<CacheEvictEntries> cacheWeakReference = new WeakReference<>(cacheEvictEntries);
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(EXECUTOR_NUMBER_OF_THREADS, ThreadUtils::getDaemonThread);
         CacheEvictEntries cacheEvictEntriesFromWeakReference = cacheWeakReference.get();
-        if (cacheEvictEntriesFromWeakReference != null) {
-            executor.scheduleAtFixedRate(cacheEvictEntriesFromWeakReference::evictEntries, EVICTION_INTERVAL , EVICTION_INTERVAL, TimeUnit.MILLISECONDS);
-        }
+        executor.scheduleAtFixedRate(() -> {
+            executor.shutdownNow();
+            if (cacheEvictEntriesFromWeakReference != null) {
+                cacheEvictEntriesFromWeakReference.evictEntries();
+            } else {
+                executor.shutdownNow();
+            }
+        }, EVICTION_INTERVAL , EVICTION_INTERVAL, TimeUnit.MILLISECONDS);
     }
 
 }

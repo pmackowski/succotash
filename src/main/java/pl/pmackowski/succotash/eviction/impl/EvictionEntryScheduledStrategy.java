@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 public class EvictionEntryScheduledStrategy<K, V> implements EvictionEntryStrategy<K, V> {
 
     private static final int EXECUTOR_NUMBER_OF_THREADS = 1;
+    private static final long CHECK_CACHE_NO_LONGER_USED_INTERVAL = 1000;
 
     private ScheduledExecutorService executor;
     private WeakReference<CacheEvictEntry<K, V>> cacheEvictEntryWeakReference;
@@ -24,6 +25,7 @@ public class EvictionEntryScheduledStrategy<K, V> implements EvictionEntryStrate
     public void start(CacheEvictEntry<K, V> cacheEvictEntry) {
         this.executor = Executors.newScheduledThreadPool(EXECUTOR_NUMBER_OF_THREADS, ThreadUtils::getDaemonThread);
         this.cacheEvictEntryWeakReference = new WeakReference<>(cacheEvictEntry);
+        this.shutdownExecutorIfCacheIsNoLongerUsed();
     }
 
     @Override
@@ -32,6 +34,14 @@ public class EvictionEntryScheduledStrategy<K, V> implements EvictionEntryStrate
         if (cacheEvictEntry != null) {
             executor.schedule(() -> cacheEvictEntry.evictEntry(key, cacheValue), timeToLiveInMillis, TimeUnit.MILLISECONDS);
         }
+    }
+
+    private void shutdownExecutorIfCacheIsNoLongerUsed() {
+        this.executor.scheduleAtFixedRate(() -> {
+            if (cacheEvictEntryWeakReference.get() == null) {
+                executor.shutdownNow();
+            }
+        }, CHECK_CACHE_NO_LONGER_USED_INTERVAL , CHECK_CACHE_NO_LONGER_USED_INTERVAL, TimeUnit.MILLISECONDS);
     }
 
 }
