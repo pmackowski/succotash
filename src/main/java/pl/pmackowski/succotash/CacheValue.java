@@ -5,10 +5,10 @@ import java.util.Objects;
 /**
  * Created by pmackowski on 2016-11-25.
  */
-class CacheValue<V> {
+public class CacheValue<V> {
 
-    private V value;
-    private long evictTimeInMillis;
+    private final V value;
+    private final long evictTimeInMillis;
 
     public CacheValue(V value, long timeToLiveInMillis) {
         this.value = value;
@@ -16,6 +16,9 @@ class CacheValue<V> {
     }
 
     public V getValue() {
+        if (shouldBeEvicted()) {
+            return null;
+        }
         return value;
     }
 

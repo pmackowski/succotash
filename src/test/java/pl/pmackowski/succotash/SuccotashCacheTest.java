@@ -4,6 +4,9 @@ import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
+import pl.pmackowski.succotash.eviction.impl.EvictionEntriesScheduledStrategy;
+import pl.pmackowski.succotash.eviction.impl.EvictionEntryScheduledStrategy;
+import pl.pmackowski.succotash.eviction.impl.EvictionEntriesThreadSleepStrategy;
 
 import java.util.Arrays;
 import java.util.List;
@@ -26,9 +29,10 @@ public class SuccotashCacheTest {
 
     @SuppressWarnings("unused")
     @DataPoints
-    public static List<Cache<String, String>> testCases = Arrays.asList(
-            new SuccotashNaiveCacheWithIterator<>(),
-            new SuccotashMainCache<>()
+    public static List<Cache<String, String>> caches = Arrays.asList(
+            new SuccotashEvictEntriesCache<>(new EvictionEntriesScheduledStrategy()),
+            new SuccotashEvictEntriesCache<>(new EvictionEntriesThreadSleepStrategy()),
+            new SuccotashEvictEntryCache<>(new EvictionEntryScheduledStrategy<>())
     );
 
     @Theory
